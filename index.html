@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>משחקי ממ"ד</title>
+  <style>
+    /* ══════════════════════════════
+       Phase 4 — CSS Styling
+    ══════════════════════════════ */
+
+    /* --- Reset & Base --- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+      background: linear-gradient(145deg, #e8f4fc 0%, #ede7f6 100%);
+      min-height: 100vh;
+      direction: rtl;
+      color: #2d2d2d;
+    }
+
+    /* --- Category colour tokens --- */
+    :root {
+      --words-bg:     #ede7f6; --words-accent:     #7c4dff; --words-card:     #d1c4e9;
+      --move-bg:      #e0f2f1; --move-accent:      #00897b; --move-card:      #b2dfdb;
+      --imagine-bg:   #e1f5fe; --imagine-accent:   #0288d1; --imagine-card:   #b3e5fc;
+      --social-bg:    #ffebee; --social-accent:    #e53935; --social-card:    #ffcdd2;
+      --challenge-bg: #fff8e1; --challenge-accent: #f9a825; --challenge-card: #fff9c4;
+    }
+
+    /* ── SCREEN WRAPPERS ── */
+    #screen-home {
+      min-height: 100vh;
+      padding: 0 0 40px;
+    }
+    #screen-game {
+      display: none;
+      min-height: 100vh;
+      padding: 24px 20px 48px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    #app-header {
+      text-align: center;
+      padding: 36px 20px 24px;
+      background: linear-gradient(135deg, #7c4dff 0%, #0288d1 100%);
+      color: #fff;
+      border-radius: 0 0 32px 32px;
+      box-shadow: 0 6px 24px rgba(124,77,255,0.25);
+      margin-bottom: 24px;
+    }
+    #app-logo { font-size: 52px; line-height: 1; margin-bottom: 8px; }
+    #app-title {
+      font-size: clamp(26px, 6vw, 38px);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    #app-subtitle {
+      font-size: 16px;
+      opacity: 0.88;
+      font-weight: 500;
+    }
+
+    /* ── CATEGORY FILTER ── */
+    #category-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 0 16px 16px;
+    }
+    .filter-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #555;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      transition: background 0.18s, color 0.18s, transform 0.12s, box-shadow 0.18s;
+      font-family: inherit;
+    }
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, #7c4dff, #0288d1);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(124,77,255,0.35);
+    }
+
+    /* ── SHUFFLE BUTTON ── */
+    #shuffle-bar {
+      text-align: center;
+      padding: 0 16px 20px;
+    }
+    #shuffle-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 36px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, #ff6f00, #ffd600);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(255,111,0,0.35);
+      letter-spacing: 0.3px;
+      font-family: inherit;
+      transition: transform 0.12s, box-shadow 0.18s;
+    }
+    #shuffle-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 24px rgba(255,111,0,0.45);
+    }
+    #shuffle-btn:active { transform: scale(0.97); }
+
+    /* ── CARD GRID ── */
+    #card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      padding: 0 16px;
+    }
+
+    /* ── GAME CARD ── */
+    .game-card {
+      border-radius: 20px;
+      padding: 20px 12px 16px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .game-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    }
+    .game-card:active { transform: scale(0.95); }
+
+    /* Category card colours */
+    .game-card.cat-words     { background: var(--words-card);     border: 2px solid var(--words-accent); }
+    .game-card.cat-move      { background: var(--move-card);      border: 2px solid var(--move-accent); }
+    .game-card.cat-imagine   { background: var(--imagine-card);   border: 2px solid var(--imagine-accent); }
+    .game-card.cat-social    { background: var(--social-card);    border: 2px solid var(--social-accent); }
+    .game-card.cat-challenge { background: var(--challenge-card); border: 2px solid var(--challenge-accent); }
+
+    .card-emoji { font-size: 38px; line-height: 1; }
+    .card-name  {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #222;
+    }
+
+    /* ── GAME SCREEN ── */
+    #back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: #555;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      margin-bottom: 28px;
+      font-family: inherit;
+      transition: transform 0.12s, box-shadow 0.15s;
+    }
+    #back-btn:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+    }
+
+    #game-panel {
+      border-radius: 28px;
+      padding: 36px 28px 32px;
+      text-align: center;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.12);
+      margin-bottom: 28px;
+    }
+    #game-panel.cat-words     { background: var(--words-bg);     border: 3px solid var(--words-accent); }
+    #game-panel.cat-move      { background: var(--move-bg);      border: 3px solid var(--move-accent); }
+    #game-panel.cat-imagine   { background: var(--imagine-bg);   border: 3px solid var(--imagine-accent); }
+    #game-panel.cat-social    { background: var(--social-bg);    border: 3px solid var(--social-accent); }
+    #game-panel.cat-challenge { background: var(--challenge-bg); border: 3px solid var(--challenge-accent); }
+
+    #game-emoji {
+      font-size: 72px;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    #game-name {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 800;
+      margin-bottom: 20px;
+      color: #1a1a1a;
+    }
+    #game-rules {
+      font-size: clamp(16px, 3.5vw, 20px);
+      line-height: 1.75;
+      color: #333;
+      font-weight: 500;
+    }
+
+    /* ── TIMER ── */
+    #timer-section {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px 24px;
+      text-align: center;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.10);
+    }
+    #timer-display {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #7c4dff;
+      margin-bottom: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+    #timer-controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    #timer-controls button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.12s, opacity 0.12s;
+    }
+    #timer-controls button:hover  { transform: translateY(-2px); }
+    #timer-controls button:active { transform: scale(0.95); }
+    #timer-start { background: #00897b; color: #fff; }
+    #timer-stop  { background: #e53935; color: #fff; }
+    #timer-reset { background: #f5f5f5; color: #555; }
+
+    /* ══════════════════════════════
+       Phase 5 — Animations
+    ══════════════════════════════ */
+
+    /* --- Keyframes --- */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cardPop {
+      from { opacity: 0; transform: scale(0.82) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes emojiPop {
+      0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+      65%  { transform: scale(1.18) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes wiggle {
+      0%,100% { transform: rotate(0deg) scale(1); }
+      20%     { transform: rotate(-5deg) scale(1.05); }
+      40%     { transform: rotate(5deg) scale(1.05); }
+      60%     { transform: rotate(-4deg) scale(1.04); }
+      80%     { transform: rotate(4deg) scale(1.04); }
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(1); opacity: 0.55; }
+      50%  { opacity: 0.75; }
+      100% { transform: translateY(-110vh) scale(0.7); opacity: 0; }
+    }
+    @keyframes panelSlideIn {
+      from { opacity: 0; transform: scale(0.94) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* --- Screen enter classes (toggled by JS) --- */
+    .screen-enter        { animation: fadeInUp 0.35s ease both; }
+    .screen-enter-down   { animation: fadeInDown 0.32s ease both; }
+
+    /* --- Card entrance (staggered, set via JS) --- */
+    .card-enter {
+      animation: cardPop 0.35s ease both;
+    }
+
+    /* --- Game panel entrance --- */
+    #game-panel.panel-enter {
+      animation: panelSlideIn 0.38s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* --- Emoji pop on game screen --- */
+    .emoji-pop {
+      animation: emojiPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* --- Shuffle button wiggle on hover --- */
+    #shuffle-btn:hover {
+      animation: wiggle 0.55s ease;
+      transform: none; /* let wiggle handle it */
+    }
+
+    /* --- Floating background shapes --- */
+    #bg-shapes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    #bg-shapes span {
+      position: absolute;
+      bottom: -60px;
+      font-size: 28px;
+      animation: floatUp linear infinite;
+      user-select: none;
+    }
+
+    /* ensure content sits above bg shapes */
+    #screen-home, #screen-game { position: relative; z-index: 1; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      #card-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      #game-panel { padding: 28px 18px 24px; }
+      .card-emoji { font-size: 30px; }
+      .card-name  { font-size: 13px; }
+    }
+    @media (min-width: 900px) {
+      #card-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════
+       SCREEN 1 — Home / Card Grid
+  ══════════════════════════════ -->
+  <div id="screen-home">
+
+    <header id="app-header">
+      <div id="app-logo">🛡️</div>
+      <h1 id="app-title">משחקי ממ"ד</h1>
+      <p id="app-subtitle">בחרו משחק ותתחילו לשחק!</p>
+    </header>
+
+    <div id="category-filter">
+      <button class="filter-btn active" data-category="all">הכל</button>
+      <button class="filter-btn" data-category="words">💬 מילים</button>
+      <button class="filter-btn" data-category="move">🏃 תנועה</button>
+      <button class="filter-btn" data-category="imagine">📖 דמיון</button>
+      <button class="filter-btn" data-category="social">❤️ רגש</button>
+      <button class="filter-btn" data-category="challenge">🏆 אתגר</button>
+    </div>
+
+    <div id="shuffle-bar">
+      <button id="shuffle-btn">✨ הפתיעו אותי!</button>
+    </div>
+
+    <div id="card-grid">
+      <!-- Cards injected by JS -->
+    </div>
+
+  </div>
+
+
+  <!-- ══════════════════════════════
+       SCREEN 2 — Game Detail
+  ══════════════════════════════ -->
+  <div id="screen-game">
+
+    <button id="back-btn">← חזרה למשחקים</button>
+
+    <div id="game-panel">
+      <div id="game-emoji"></div>
+      <h2 id="game-name"></h2>
+      <p id="game-rules"></p>
+    </div>
+
+    <div id="timer-section">
+      <div id="timer-display">00:00</div>
+      <div id="timer-controls">
+        <button id="timer-start">▶ התחל</button>
+        <button id="timer-stop">⏸ עצור</button>
+        <button id="timer-reset">🔄 אפס</button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <script>
+    // ══════════════════════════════
+    // Phase 2 — Game Data
+    // ══════════════════════════════
+    const GAMES = [
+      // ── WORDS 💬
+      {
+        id: 1, category: 'words', emoji: '🤔',
+        name: 'אמת או חובה (בלי חובה)',
+        rules: 'כל אחד בתורו בוחר מישהו שישאל אותו שאלה אישית — וחייבים לענות באמת! אין חובה במשחק הזה, רק שאלות אמיתיות ומעניינות.'
+      },
+      {
+        id: 2, category: 'words', emoji: '🔗',
+        name: 'אסוציאציות',
+        rules: 'כל שחקן אומר מילה שקשורה למילה הקודמת — עד שמישהו נתקע ולא מוצא קשר. מי שנתקע יוצא!'
+      },
+      {
+        id: 3, category: 'words', emoji: '🧳',
+        name: 'אני יוצא לטיול ולוקח',
+        rules: 'כל משתתף מוסיף פריט אחד לרשימה — וחייב לזכור את כל הפריטים הקודמים לפי הסדר. מי שטועה בסדר — יוצא!'
+      },
+      {
+        id: 4, category: 'words', emoji: '🔤',
+        name: 'ראשי תיבות מגניבים',
+        rules: 'בוחרים שם של אחד המשתתפים או מילה כלשהי. כל אחד ממציא משמעות חדשה ומצחיקה לאותיות. מי שממציא הכי טוב — מנצח!'
+      },
+      {
+        id: 5, category: 'words', emoji: '⛓️',
+        name: 'שרשרת חרוזים',
+        rules: 'הראשון בוחר מילה, הבא אחריו מוצא לה חרוז, הבא מוצא חרוז לחרוז — עד שמישהו נתקע ומפסיד.'
+      },
+      {
+        id: 6, category: 'words', emoji: '↔️',
+        name: 'מילה והיפוכה',
+        rules: 'משתתף אומר מילה — הבא בתור חייב לומר את ההפך שלה מיד. מי שמהסס יותר מדי — יוצא!'
+      },
+      {
+        id: 7, category: 'words', emoji: '🚫',
+        name: 'מילה אסורה',
+        rules: 'בוחרים מילה שאסור לומר (למשל "לא" או "אני"). מנהלים שיחה רגילה — מי שאומר אותה בטעות עושה משימה קטנה ומצחיקה.'
+      },
+      {
+        id: 8, category: 'words', emoji: '🤐',
+        name: 'המילה',
+        rules: 'בוחרים מילה בתחילת השהות בממ"ד — מי שאומר אותה במהלך כל השהות נפסל! צריך להיות עירני כל הזמן.'
+      },
+      {
+        id: 9, category: 'words', emoji: '🔇',
+        name: 'בלי אות א',
+        rules: 'מדברים — אבל אסור לומר מילה שמכילה את האות "א". אם נאמרה — כולם צועקים "אה-אה!" והמשתתף עושה משימה.'
+      },
+      {
+        id: 10, category: 'words', emoji: '💬',
+        name: 'פתגם חדש',
+        rules: 'מישהו מתחיל פתגם — המשתתף הבא בתור חייב לסיים אותו (אמיתי או מומצא!). הכי מצחיק — מנצח!'
+      },
+      {
+        id: 11, category: 'words', emoji: '🌍',
+        name: 'ארץ עיר',
+        rules: 'בוחרים אות וכל משתתף אומר מילים לפי קטגוריות: ארץ / עיר / שם ילד / חי / צומח / דומם — באותה אות. מי שנתקע — יוצא!'
+      },
+      {
+        id: 12, category: 'words', emoji: '🔡',
+        name: 'א-ת',
+        rules: 'בוחרים נושא שמעניין אתכם — וכל משתתף בתורו צריך למצוא מילה שקשורה לנושא שמתחילה בסדר האותיות (א, ב, ג...). מי שנתקע — יוצא!'
+      },
+      {
+        id: 13, category: 'words', emoji: '🔢',
+        name: 'רצף אותיות',
+        rules: 'מונים את האל"ף-בי"ת אחורה, כל אחד בתורו. טעות = שירה בקול מצחיק!'
+      },
+      {
+        id: 14, category: 'words', emoji: '😤',
+        name: 'משחק השכנועים',
+        rules: 'כל אחד בוחר חפץ קיים בממ"ד — וצריך לשכנע למה הוא הכי חשוב בעולם. בסוף כל שכנוע יש הצבעה — מי שיצח יותר הצבעות מנצח!'
+      },
+
+      // ── MOVEMENT 🏃
+      {
+        id: 15, category: 'move', emoji: '🥁',
+        name: 'משחק התיפוף',
+        rules: 'מישהו מתופף קצב עם ידיים — כולם מחקים אותו בדיוק. מי שטועה — תורו להמציא קצב חדש!'
+      },
+      {
+        id: 16, category: 'move', emoji: '🌊',
+        name: 'ים יבשה',
+        rules: 'המנחה קורא "ים" או "יבשה" — השחקנים קופצים לכיוון הנכון (צד שהוסכם מראש). מי שטועה — יוצא!'
+      },
+      {
+        id: 17, category: 'move', emoji: '✋',
+        name: 'סטופ ידיים',
+        rules: 'כולם שמים ידיים במרכז. כשאומרים "סטופ!" — מושכים מהר. האחרון שמושך עושה אתגר קטן.'
+      },
+      {
+        id: 18, category: 'move', emoji: '🦵',
+        name: 'עמידה על רגל אחת',
+        rules: 'תחרות בין המשתתפים — מי מחזיק הכי הרבה זמן על רגל אחת בלי לגעת ברצפה עם הרגל השנייה? האחרון שנופל — מנצח!'
+      },
+      {
+        id: 19, category: 'move', emoji: '🗿',
+        name: 'משחק הפסלים',
+        rules: 'כולם קופאים בתנוחה יצירתית. המנחה מנסה להצחיק אותם או לגרום להם לזוז — מי שזז יוצא. האחרון שנשאר קפוא — מנצח!'
+      },
+      {
+        id: 20, category: 'move', emoji: '👁️',
+        name: 'לא להוריד את העיניים',
+        rules: 'כולם מסתכלים אחד לשני בעיניים — אסור להוריד את המבט. מי שממצמץ או מסיט עיניים — יוצא!'
+      },
+      {
+        id: 21, category: 'move', emoji: '😊',
+        name: 'חיוך ממושך',
+        rules: 'מי מחזיק חיוך (אמיתי או מזויף) הכי הרבה זמן? הגרימיסות מותרות — העיקר לשמור על החיוך!'
+      },
+      {
+        id: 22, category: 'move', emoji: '🎭',
+        name: 'פנטומימה',
+        rules: 'משתתף אחד מחקה דמות / חיה / מילה — בלי מילים בכלל! שאר המשתתפים צריכים לנחש מה זה. מי שניחש — תורו לחקות!'
+      },
+      {
+        id: 23, category: 'move', emoji: '🦁',
+        name: 'חיקויים',
+        rules: 'אחד מחקה דמות מפורסמת או חיה — השאר מנחשים מי או מה זה. ככל שהחיקוי טוב יותר, כך יותר כיף!'
+      },
+
+      // ── IMAGINATION 📖
+      {
+        id: 24, category: 'imagine', emoji: '📖',
+        name: 'משחק המשך',
+        rules: 'משתתף מתחיל סיפור במשפט אחד — וכל אחד ממשיך את הסיפור במשפט נוסף. הסיפור צריך להיות מצחיק, סוחף ודמיוני!'
+      },
+      {
+        id: 25, category: 'imagine', emoji: '📝',
+        name: 'סיפור בהמשך',
+        rules: 'יוצרים סיפור מאולתר — אבל כל משפט חייב להתחיל באות הבאה לפי סדר האל"ף-בי"ת. מצחיק ומאתגר!'
+      },
+      {
+        id: 26, category: 'imagine', emoji: '🎩',
+        name: 'כובע השאלות',
+        rules: 'כל אחד בתורו שואל שאלה מוזרה או משעשעת ("אם היית סופר-גיבור, איזו יכולת הייתה לך?") — השאר עונים בדמיון!'
+      },
+      {
+        id: 27, category: 'imagine', emoji: '🧠',
+        name: 'פסיכולוג הפוך',
+        rules: 'כל אחד מספר על בעיה שלו — והיועץ (מישהו אחר) נותן את העצה הגרועה ביותר האפשרית. ככל שהעצה גרועה יותר — כך יותר צחוק!'
+      },
+      {
+        id: 28, category: 'imagine', emoji: '🦕',
+        name: 'דינוזאור, בלרינה, פקח חנייה',
+        rules: 'כל משתתף בוחר דמות (דינוזאור, בלרינה, פקח חנייה או כל דמות אחרת) — וכולם מנהלים שיחה רגילה תוך שמירה על הדמות שלהם.'
+      },
+      {
+        id: 29, category: 'imagine', emoji: '📣',
+        name: 'פרסומת',
+        rules: 'יוצרים פרסומת לחפץ כלשהו בממ"ד — ממציאים סלוגן, יתרונות מדומיינים והכל. בסוף יש תחרות הצבעות — מי עשה הכי טוב?'
+      },
+      {
+        id: 30, category: 'imagine', emoji: '🔍',
+        name: 'גלה את המרואיין',
+        rules: 'אחד מראיין, השני בוחר לעצמו דמות דמיונית בסתר. המשתתפים שואלים שאלות ומנסים לנחש מי הדמות.'
+      },
+      {
+        id: 31, category: 'imagine', emoji: '💼',
+        name: 'במה אתה עובד?',
+        rules: 'ממציאים מקצוע דמיוני ומצחיק — ואז מבצעים ראיון עבודה כדי לגלות מהו. השאר מנחשים!'
+      },
+      {
+        id: 32, category: 'imagine', emoji: '💡',
+        name: 'שימוש חדש',
+        rules: 'מציבים חפץ כלשהו מהממ"ד במרכז. כל אחד בתורו ממציא שימוש חדש ויצירתי לחפץ — אסור לחזור על אותו רעיון!'
+      },
+      {
+        id: 33, category: 'imagine', emoji: '🏷️',
+        name: 'תן שם',
+        rules: 'מישהו זורק קטגוריה (חיות, צבעים, חפצים, מפורסמים) — וצריך לתת דוגמאות. מי שנתקע — יוצא זמנית!'
+      },
+      {
+        id: 34, category: 'imagine', emoji: '🔨',
+        name: 'מכירה פומבית',
+        rules: 'כל אחד מציע חפץ דמיוני למכירה ומפרט את יתרונותיו — השאר "מציעים מחיר". מי שקיבל את המחיר הטוב ביותר — מנצח!'
+      },
+      {
+        id: 35, category: 'imagine', emoji: '⭐',
+        name: 'כוכב שומר',
+        rules: 'כל אחד מדמיין כוכב שמגן עליו — ומספר מה הוא עושה ומה הוא לוחש לו בלילה. תרגיל נפלא להרגעה ולדמיון.'
+      },
+      {
+        id: 36, category: 'imagine', emoji: '👜',
+        name: 'מה בכיס שלי?',
+        rules: 'כל אחד ממציא חפץ דמיוני בכיסו — האחרים מנסים לנחש מהו בעזרת שאלות כן/לא. ככל שהחפץ מוזר יותר — כך יותר כיף!'
+      },
+
+      // ── SOCIAL ❤️
+      {
+        id: 37, category: 'social', emoji: '🎭',
+        name: 'תיאטרון 4 רגשות',
+        rules: 'מציגים סיפור קטן — כל פעם עם רגש אחר בלבד: פחד, שמחה, הפתעה, שעמום. אותו סיפור — ארבע גרסאות שונות לגמרי!'
+      },
+      {
+        id: 38, category: 'social', emoji: '🃏',
+        name: 'דומינו רגשות',
+        rules: 'כל משתתף חייב לתאר רגש שמתחיל באות האחרונה של הרגש הקודם. לדוגמה: שמחה → אהבה → אכזבה...'
+      },
+      {
+        id: 39, category: 'social', emoji: '✏️',
+        name: 'השלמת משפטים',
+        rules: 'כל אחד משלים את המשפט בתורו: "הייתי רוצה ש..." / "מה שמרגיע אותי זה..." / "אם הייתי ענן הייתי...". תשובות אמיתיות או מצחיקות — הכל בסדר!'
+      },
+      {
+        id: 40, category: 'social', emoji: '❤️',
+        name: 'תכונה טובה',
+        rules: 'כל משתתף אומר תכונה טובה על השחקן שלפניו — בלי לחזור על תכונה שכבר נאמרה. מחמם את הלב!'
+      },
+      {
+        id: 41, category: 'social', emoji: '🙋',
+        name: 'אמת על עצמי',
+        rules: 'כל אחד מגלה משהו קטן ואמיתי על עצמו שאחרים לא יודעים עליו. מפתיע כמה דברים לא יודעים על האנשים הכי קרובים!'
+      },
+      {
+        id: 42, category: 'social', emoji: '📋',
+        name: 'השלמת משפטים ב',
+        rules: 'כל אחד מספר ומודה בתורו על דבר אחד טוב שקרה לו היום — גם אם היום היה קשה, תמיד יש משהו טוב!'
+      },
+      {
+        id: 43, category: 'social', emoji: '🌟',
+        name: 'מגדל השמות',
+        rules: 'כל אחד מוסיף שם לרשימה — וכולם צריכים לזכור את הסדר המדויק. כמה שמות תצליחו לצבור?'
+      },
+      {
+        id: 44, category: 'social', emoji: '🤫',
+        name: 'קרה או לא קרה',
+        rules: 'כל אחד בתורו מספר משהו מוזר שקרה לו — האחרים צריכים לנחש: אמת או שקר? מי שהצליח לרמות את כולם — מנצח!'
+      },
+      {
+        id: 45, category: 'social', emoji: '🤫',
+        name: 'משחק הלחישה',
+        rules: 'מישהו לוחש מילה (בלי קול — רק תנועות שפתיים) — השאר צריכים לנחש מה נאמר. הכי מצחיק כשיש ויכוח על מה נלחש!'
+      },
+      {
+        id: 46, category: 'social', emoji: '📞',
+        name: 'טלפון שבור',
+        rules: 'מישהו לוחש משפט לאוזן השכן — וכל אחד מעביר הלאה עד הסוף. המשפט האחרון נאמר בקול — ורוב הסיכויים שהוא שונה לגמרי!'
+      },
+      {
+        id: 47, category: 'social', emoji: '🏗️',
+        name: 'מי אני ומה אני?!',
+        rules: 'כל אחד כותב משהו שלא יודעים עליו על פתק. מערבבים, מישהו שולף פתק ומנחש של מי זה. קשה יותר ממה שנדמה!'
+      },
+
+      // ── CHALLENGE 🏆
+      {
+        id: 48, category: 'challenge', emoji: '❓',
+        name: '20 השאלות',
+        rules: 'משתתף חושב על משהו (חפץ, חיה, מפורסם) — והאחרים שואלים עד 20 שאלות שאפשר לענות עליהן רק כן / לא. ינצח מי שינחש!'
+      },
+      {
+        id: 49, category: 'challenge', emoji: '🌡️',
+        name: 'חם קר',
+        rules: 'מישהו מדמיין חפץ בממ"ד — השאר שואלים שאלות הכוונה. מי שבחר את החפץ עונה "חם" (קרוב) או "קר" (רחוק) — עד שמגלים!'
+      },
+      {
+        id: 50, category: 'challenge', emoji: '🎵',
+        name: 'זיהוי שירים',
+        rules: 'תחרות זיהוי שירים! אחד מזמזם שיר — השאר מנחשים. אפשר גם לתת אות ראשונה ולנחש שיר שמתחיל בה.'
+      },
+      {
+        id: 51, category: 'challenge', emoji: '🔢',
+        name: 'מספרים',
+        rules: 'סופרים ברצף — אבל כשמגיעים למספר שמתחיל בספרה מסוימת (למשל 7) — מוחאים כפיים במקום לאמרו. מי שאמר — נפסל!'
+      },
+      {
+        id: 52, category: 'challenge', emoji: '🔢',
+        name: 'סופרים מספרים',
+        rules: 'מנסים לספור יחד עד 20 — אבל בלי לקבוע מי אומר מתי. אם שני אנשים מדברים יחד — חוזרים ל-1. צריך תיאום עיניים!'
+      },
+      {
+        id: 53, category: 'challenge', emoji: '☝️',
+        name: 'אף פעם',
+        rules: 'כולם מרימים 10 אצבעות. מישהו אומר "אף פעם לא..." — וכל מי שעשה את זה מוריד אצבע. המטרה — להישאר עם כל האצבעות מורמות!'
+      },
+      {
+        id: 54, category: 'challenge', emoji: '👑',
+        name: 'המלך אמר',
+        rules: 'רק אחד מהמשתתפים מתחיל תנועה בסתר — והאחרים מצטרפים אחד אחד. מישהו שמחוץ לקבוצה צריך לנחש מי המנהיג שמתחיל את כל התנועות.'
+      },
+      {
+        id: 55, category: 'challenge', emoji: '👀',
+        name: 'מה נשתנה',
+        rules: 'כולם עוצמים עיניים — מישהו משנה דבר אחד בחדר או בעצמו (כפתור פתוח, נעל חולצת). מי יגלה ראשון מה נשתנה?'
+      },
+      {
+        id: 56, category: 'challenge', emoji: '✍️',
+        name: 'ציור באצבע',
+        rules: 'משתתף מצייר מילה או חפץ באצבע על הגב של השחקן לפניו — והוא צריך לנחש מה צויר. אפשר לשחק בשרשרת!'
+      },
+      {
+        id: 57, category: 'challenge', emoji: '📦',
+        name: 'החפץ',
+        rules: 'משתתף מתאר חפץ שנמצא בממ"ד בצורה מצחיקה ומוגזמת — בלי לומר את שמו. השאר מנחשים מהו החפץ!'
+      },
+      {
+        id: 58, category: 'challenge', emoji: '🔊',
+        name: 'מי דיבר?',
+        rules: 'כולם עוצמים עיניים. מישהו אומר מילה או משפט קצר — השאר מנחשים מי דיבר. קשה יותר ממה שנדמה!'
+      },
+      {
+        id: 59, category: 'challenge', emoji: '🔍',
+        name: 'משחק ניחושים',
+        rules: 'מישהו מחביא מספר מסוים של אצבעות מאחורי הגב — האחרים מנחשים כמה. מי שטעה — יוצא. מי שניחש — ממשיך!'
+      },
+      {
+        id: 60, category: 'challenge', emoji: '⭕',
+        name: 'איקס עיגול',
+        rules: 'שחקו איקס עיגול על רצפת הממ"ד — עם חפצים שקיימים בממ"ד (נעל מול בקבוק, מפתח מול טלפון). הכי יצירתי שיש!'
+      }
+    ];
+
+    // ══════════════════════════════
+    // Phase 3 — JS Logic
+    // ══════════════════════════════
+
+    // --- State ---
+    let activeFilter = 'all';
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let timerRunning = false;
+
+    // --- DOM refs ---
+    const screenHome = document.getElementById('screen-home');
+    const screenGame = document.getElementById('screen-game');
+    const cardGrid   = document.getElementById('card-grid');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    // --- Render cards ---
+    function renderCards(filter) {
+      activeFilter = filter;
+      const filtered = filter === 'all'
+        ? GAMES
+        : GAMES.filter(g => g.category === filter);
+
+      cardGrid.innerHTML = filtered.map(g => `
+        <div class="game-card cat-${g.category}" data-id="${g.id}" role="button" tabindex="0">
+          <div class="card-emoji">${g.emoji}</div>
+          <div class="card-name">${g.name}</div>
+        </div>
+      `).join('');
+
+      // Attach click listeners + staggered entrance animation
+      cardGrid.querySelectorAll('.game-card').forEach((card, i) => {
+        card.classList.add('card-enter');
+        card.style.animationDelay = `${i * 0.04}s`;
+        card.addEventListener('click', () => openGame(Number(card.dataset.id)));
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') openGame(Number(card.dataset.id));
+        });
+      });
+
+      // Update active filter button
+      filterBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === filter);
+      });
+    }
+
+    // --- Open game screen ---
+    function openGame(id) {
+      const game = GAMES.find(g => g.id === id);
+      if (!game) return;
+
+      playPop();
+
+      document.getElementById('game-emoji').textContent = game.emoji;
+      document.getElementById('game-name').textContent  = game.name;
+      document.getElementById('game-rules').textContent = game.rules;
+
+      // Add category color class to panel (single declaration)
+      const panel = document.getElementById('game-panel');
+      panel.className = '';
+      panel.classList.add('cat-' + game.category);
+
+      // Reset timer
+      resetTimer();
+
+      screenHome.style.display = 'none';
+      screenGame.style.display = 'block';
+
+      // Animate screen
+      screenGame.classList.remove('screen-enter');
+      void screenGame.offsetWidth;
+      screenGame.classList.add('screen-enter');
+
+      // Animate panel
+      panel.classList.remove('panel-enter');
+      void panel.offsetWidth;
+      panel.classList.add('panel-enter');
+
+      // Animate emoji
+      const emojiEl = document.getElementById('game-emoji');
+      emojiEl.classList.remove('emoji-pop');
+      void emojiEl.offsetWidth;
+      emojiEl.classList.add('emoji-pop');
+
+      window.scrollTo(0, 0);
+    }
+
+    // --- Go back home ---
+    function goHome() {
+      playWhoosh();
+      screenGame.style.display = 'none';
+      screenHome.style.display = 'block';
+      stopTimer();
+
+      screenHome.classList.remove('screen-enter-down');
+      void screenHome.offsetWidth;
+      screenHome.classList.add('screen-enter-down');
+
+      window.scrollTo(0, 0);
+    }
+
+    // --- Shuffle: pick random game ---
+    function shuffleGame() {
+      playFanfare();
+      const pool = activeFilter === 'all'
+        ? GAMES
+        : GAMES.filter(g => g.category === activeFilter);
+      const random = pool[Math.floor(Math.random() * pool.length)];
+      openGame(random.id);
+    }
+
+    // --- Timer ---
+    function formatTime(s) {
+      const m = String(Math.floor(s / 60)).padStart(2, '0');
+      const sec = String(s % 60).padStart(2, '0');
+      return `${m}:${sec}`;
+    }
+
+    function startTimer() {
+      if (timerRunning) return;
+      timerRunning = true;
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+      stopTimer();
+      timerSeconds = 0;
+      document.getElementById('timer-display').textContent = '00:00';
+    }
+
+    // --- Event listeners ---
+    document.getElementById('back-btn').addEventListener('click', goHome);
+    document.getElementById('shuffle-btn').addEventListener('click', shuffleGame);
+    document.getElementById('timer-start').addEventListener('click', startTimer);
+    document.getElementById('timer-stop').addEventListener('click', stopTimer);
+    document.getElementById('timer-reset').addEventListener('click', resetTimer);
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => renderCards(btn.dataset.category));
+    });
+
+    // ══════════════════════════════
+    // Phase 6 — Sound Effects (Web Audio API)
+    // ══════════════════════════════
+
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // Short high-pitched pop — played on card click
+    function playPop() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    // Soft whoosh — played on back button
+    function playWhoosh() {
+      try {
+        const ctx = getAudioCtx();
+        const bufSize = ctx.sampleRate * 0.18;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.18);
+        filter.Q.value = 1.5;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.22, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        src.start();
+        src.stop(ctx.currentTime + 0.18);
+      } catch (e) {}
+    }
+
+    // Cheerful 3-note ascending fanfare — played on shuffle
+    function playFanfare() {
+      try {
+        const ctx = getAudioCtx();
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach((freq, i) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'square';
+          const t = ctx.currentTime + i * 0.13;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.0, t);
+          gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+          osc.start(t);
+          osc.stop(t + 0.18);
+        });
+      } catch (e) {}
+    }
+
+    // --- Init ---
+    renderCards('all');
+
+    // ── Floating background shapes ──
+    const FLOAT_EMOJIS = ['⭐','✨','💫','🌟','🎈','🌈','💝','🎉','🎊','🌸'];
+    const bgShapes = document.createElement('div');
+    bgShapes.id = 'bg-shapes';
+    FLOAT_EMOJIS.forEach((em, i) => {
+      const span = document.createElement('span');
+      span.textContent = em;
+      span.style.left            = `${4 + i * 9.5}%`;
+      span.style.animationDelay    = `${i * 2.1}s`;
+      span.style.animationDuration = `${13 + i * 1.7}s`;
+      span.style.fontSize          = `${20 + (i % 3) * 10}px`;
+      bgShapes.appendChild(span);
+    });
+    document.body.appendChild(bgShapes);
+
+  </script>
+
+</body>
+</html>
